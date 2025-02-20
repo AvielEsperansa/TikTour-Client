@@ -1,0 +1,49 @@
+version: 2.1
+
+orbs:
+  node: circleci/node@5
+
+jobs:
+  test-frontend:
+    executor: node/default
+    working_directory: ~/project/frontend
+    environment:
+      JEST_JUNIT_OUTPUT_DIR: ./test-results/
+    steps:
+      - checkout:
+          path: ~/project
+      - node/install-packages:
+          pkg-manager: npm
+      - run:
+          command: npm install jest-junit
+      - run:
+          name: Run frontend tests
+          command: npm test --ci --runInBand --reporters=default --reporters=jest-junit
+      - run:
+          name: Run frontend linter
+          command: npm run lint
+      - store_test_results:
+          path: ./test-results/
+      - run:
+          name: deploy app - stage
+          command: curl "https://api.render.com/deploy/srv-cqelblggph6c73as6pn0?key=R-Bn3VmmFIk"
+
+  deploy-frontend:
+    executor: node/default
+    working_directory: ~/project/frontend
+    steps:
+      - run:
+          name: deploy app
+          command: curl "https://api.render.com/deploy/srv-cqdp4gg8fa8c73dp3p80?key=hQ1BG-PjRDY"
+
+workflows:
+  version: 2
+  build-and-test:
+    jobs:
+      - test-frontend
+      - deploy-frontend:
+          requires:
+            - test-frontend
+          filters:
+            branches:
+              only: production
